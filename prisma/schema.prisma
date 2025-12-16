@@ -1,0 +1,271 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  ADMIN
+  PROCESSOR
+  VIEWER
+}
+
+enum ApplicationType {
+  NEW
+  RENEWAL
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  PENDING_VETTING
+  APPROVED
+  FOR_DISBURSEMENT
+  ACTIVE
+  FULLY_PAID
+  DISAPPROVED
+  CANCELLED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum CivilStatus {
+  SINGLE
+  MARRIED
+  WIDOWED
+  SEPARATED
+  ANNULLED
+}
+
+enum ResidenceOwnership {
+  OWNED
+  MORTGAGED
+  RENTED
+  LIVING_WITH_RELATIVES
+  COMPANY_PROVIDED
+}
+
+enum IncomeSource {
+  EMPLOYMENT
+  BUSINESS
+  REMITTANCE
+  OTHER
+}
+
+enum ReceiptType {
+  OFFICIAL_RECEIPT
+  COLLECTION_RECEIPT
+}
+
+model User {
+  id                    String            @id @default(uuid())
+  email                 String            @unique
+  passwordHash          String
+  fullName              String
+  role                  UserRole          @default(VIEWER)
+  isActive              Boolean           @default(true)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  createdApplications   LoanApplication[] @relation("CreatedBy")
+  processedApplications LoanApplication[] @relation("ProcessedBy")
+  issuedReceipts        ORCRReceipt[]     @relation("IssuedBy")
+  voidedReceipts        ORCRReceipt[]     @relation("VoidedBy")
+}
+
+model LoanApplication {
+  id                    String            @id @default(uuid())
+  referenceNumber       String            @unique
+  applicationType       ApplicationType   @default(NEW)
+  status                ApplicationStatus @default(DRAFT)
+  currentStep           Int               @default(1)
+  referralSource        String?
+  loanProductType       String            @default("PERSONAL")
+  loanAmount            Decimal           @default(0) @db.Decimal(15, 2)
+  loanTermMonths        Int               @default(12)
+  loanPurpose           String?
+  firstName             String
+  middleName            String?
+  lastName              String
+  suffix                String?
+  dateOfBirth           DateTime?
+  gender                Gender?
+  civilStatus           CivilStatus?
+  nationality           String            @default("Filipino")
+  motherMaidenName      String?
+  mobileNumber          String?
+  telephoneNumber       String?
+  emailAddress          String?
+  presentStreet         String?
+  presentBarangay       String?
+  presentCity           String?
+  presentProvince       String?
+  presentRegion         String?
+  presentZipCode        String?
+  presentYearsStay      Int?
+  permanentSameAsPresent Boolean          @default(true)
+  permanentStreet       String?
+  permanentBarangay     String?
+  permanentCity         String?
+  permanentProvince     String?
+  permanentRegion       String?
+  permanentZipCode      String?
+  primaryIdType         String?
+  primaryIdNumber       String?
+  primaryIdExpiry       DateTime?
+  secondaryIdType       String?
+  secondaryIdNumber     String?
+  tin                   String?
+  sssGsis               String?
+  highestEducation      String?
+  schoolName            String?
+  collateralType        String?
+  collateralMake        String?
+  collateralModel       String?
+  collateralYear        Int?
+  collateralStatus      String?
+  collateralDescription String?           @db.Text
+  collateralValue       Decimal?          @db.Decimal(15, 2)
+  residenceOwnership    ResidenceOwnership?
+  monthlyRent           Decimal?          @db.Decimal(15, 2)
+  landlordName          String?
+  landlordContact       String?
+  residenceYears        Int?
+  spouseFirstName       String?
+  spouseMiddleName      String?
+  spouseLastName        String?
+  spouseDateOfBirth     DateTime?
+  spouseOccupation      String?
+  spouseEmployer        String?
+  spouseMonthlyIncome   Decimal?          @db.Decimal(15, 2)
+  spouseContactNumber   String?
+  numberOfDependents    Int               @default(0)
+  primaryIncomeSource   IncomeSource?
+  businessName          String?
+  businessNature        String?
+  businessAddress       String?
+  businessYears         Int?
+  businessManpower      Int?
+  businessGrossIncome   Decimal?          @db.Decimal(15, 2)
+  businessNetIncome     Decimal?          @db.Decimal(15, 2)
+  employerName          String?
+  employerAddress       String?
+  employerContact       String?
+  jobPosition           String?
+  employmentYears       Int?
+  employmentMonths      Int?
+  monthlyGrossSalary    Decimal?          @db.Decimal(15, 2)
+  monthlyNetSalary      Decimal?          @db.Decimal(15, 2)
+  ofwName               String?
+  ofwRelationship       String?
+  ofwCountry            String?
+  remittanceAmount      Decimal?          @db.Decimal(15, 2)
+  remittanceFrequency   String?
+  otherIncomeSource     String?
+  otherIncomeAmount     Decimal?          @db.Decimal(15, 2)
+  otherIncomeDescription String?
+  monthlyExpenses       Decimal?          @db.Decimal(15, 2)
+  existingLoanPayments  Decimal?          @db.Decimal(15, 2)
+  hasCoBorrower         Boolean           @default(false)
+  coBorrowerIsSpouse    Boolean           @default(false)
+  coBorrowerFirstName   String?
+  coBorrowerMiddleName  String?
+  coBorrowerLastName    String?
+  coBorrowerRelationship String?
+  coBorrowerDateOfBirth DateTime?
+  coBorrowerContact     String?
+  coBorrowerAddress     String?
+  coBorrowerIncomeSource IncomeSource?
+  coBorrowerMonthlyIncome Decimal?        @db.Decimal(15, 2)
+  undertakingSigned     Boolean           @default(false)
+  privacyNoticeSigned   Boolean           @default(false)
+  signedAt              DateTime?
+  submittedAt           DateTime?
+  vettingStartedAt      DateTime?
+  vettingCompletedAt    DateTime?
+  vettingReportReceived Boolean           @default(false)
+  vettingRecommendation String?
+  vettingNotes          String?           @db.Text
+  approvedAt            DateTime?
+  approvedAmount        Decimal?          @db.Decimal(15, 2)
+  interestRate          Decimal?          @db.Decimal(5, 2)
+  approvalNotes         String?           @db.Text
+  rejectionReason       String?           @db.Text
+  disbursementAt        DateTime?
+  fundsReleasedAt       DateTime?
+  completedAt           DateTime?
+  cancelledAt           DateTime?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  createdById           String?
+  createdBy             User?             @relation("CreatedBy", fields: [createdById], references: [id])
+  processedById         String?
+  processedBy           User?             @relation("ProcessedBy", fields: [processedById], references: [id])
+  dependents            Dependent[]
+  characterReferences   CharacterReference[]
+  tradeReferences       TradeReference[]
+  receipts              ORCRReceipt[]
+}
+
+model Dependent {
+  id            String          @id @default(uuid())
+  applicationId String
+  application   LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  name          String
+  relationship  String
+  dateOfBirth   DateTime?
+  occupation    String?
+  createdAt     DateTime        @default(now())
+}
+
+model CharacterReference {
+  id            String          @id @default(uuid())
+  applicationId String
+  application   LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  name          String
+  relationship  String
+  contactNumber String
+  address       String?
+  createdAt     DateTime        @default(now())
+}
+
+model TradeReference {
+  id            String          @id @default(uuid())
+  applicationId String
+  application   LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  companyName   String
+  contactPerson String?
+  contactNumber String
+  relationship  String
+  yearsKnown    Int?
+  createdAt     DateTime        @default(now())
+}
+
+model ORCRReceipt {
+  id               String          @id @default(uuid())
+  receiptNumber    String          @unique
+  receiptType      ReceiptType
+  applicationId    String
+  application      LoanApplication @relation(fields: [applicationId], references: [id])
+  amount           Decimal         @db.Decimal(15, 2)
+  paymentMethod    String
+  paymentReference String?
+  paymentDate      DateTime
+  payorName        String
+  payorAddress     String?
+  particulars      String?         @db.Text
+  isVoided         Boolean         @default(false)
+  voidedById       String?
+  voidedBy         User?           @relation("VoidedBy", fields: [voidedById], references: [id])
+  voidedAt         DateTime?
+  voidReason       String?         @db.Text
+  issuedById       String
+  issuedBy         User            @relation("IssuedBy", fields: [issuedById], references: [id])
+  issuedAt         DateTime        @default(now())
+}
